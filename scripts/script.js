@@ -1,6 +1,7 @@
 'use strict';
 //массив объявленных товаров
 const dataBase = JSON.parse(localStorage.getItem('local')) || [];
+let counter = dataBase.length;
 
 const modalAdd = document.querySelector('.modal__add'),
     addAd = document.querySelector('.add__ad'),
@@ -11,7 +12,16 @@ const modalAdd = document.querySelector('.modal__add'),
     modalBtnWarning = document.querySelector('.modal__btn-warning'),
     modalFileInput = document.querySelector('.modal__file-input'),
     modalFileBtn = document.querySelector('.modal__file-btn'),
-    modalImageAdd = document.querySelector('.modal__image-add');
+    modalImageAdd = document.querySelector('.modal__image-add'),
+    searchInput = document.querySelector('.search__input'),
+    menuContainer = document.querySelector('.menu__container');
+
+//элементы модального окна
+const modalHeaderItem = document.querySelector('.modal__header-item'),
+    modalStatusItem = document.querySelector('.modal__status-item'),
+    modalDescriptionItem = document.querySelector('.modal__description-item'),
+    modalCostItem = document.querySelector('.modal__cost-item'),
+    modalImageItem = document.querySelector('.modal__image-item');
 
 //изначальное значение элементов
 const textFileBtn = modalFileBtn.textContent;
@@ -24,7 +34,7 @@ console.log(elementsModalSubmit);
 
 //объект изображений
 const infoPhoto = {};
-//добавить в localStorage
+//добавить данные в localStorage
 const saveLocal = () => localStorage.setItem('local', JSON.stringify(dataBase));
 
 //проверка значений формы, кнопка отправить активна/неактивна в зависимости от заполненности полей
@@ -35,7 +45,7 @@ const checkValid = () =>{
     modalBtnWarning.style.display = validForm ? 'none' : '';
 };
 
-//функция закрытия модальных окон
+//функция закрытия модальных окон на крестик, кнопку escape и подложку
 const closeModal = event => {
     const target = event.target;
     if (target.classList.contains('modal__close') || 
@@ -53,25 +63,24 @@ const closeModal = event => {
     console.log(dataBase);
 };
 //сформировать объявление на главной странице
-const renderCard = () => {
+const renderCard = (DB = dataBase) => {
     catalog.textContent = '';
 
-    dataBase.forEach((item, i) => {
+    DB.forEach(item => {
 
         catalog.insertAdjacentHTML('beforeend', `
-        <li class="card" data-id="${i}">
+        <li class="card" data-id="${item.id}">
             <img class="card__image" src = "data:image/jpeg;base64,${item.image}" alt="test">
             <div class="card__description">
                 <h3 class="card__header">${item.nameItem}</h3>
-                <div class="card__price">${item.costItem}</div>
+                <div class="card__price">${item.costItem} грн</div>
             </div>
         </li>
         `);
     });
 };
 
-
-//работа с изображением
+//работа с изображениями
 modalFileInput.addEventListener('change', event =>{
     const target = event.target;
 
@@ -82,6 +91,7 @@ modalFileInput.addEventListener('change', event =>{
     infoPhoto.size = file.size;
 
     reader.readAsBinaryString(file);
+//проверка размера изображения
     reader.addEventListener('load', event =>{
         if(infoPhoto.size < 300000){
             modalFileBtn.textContent = infoPhoto.filename;
@@ -98,28 +108,18 @@ modalFileInput.addEventListener('change', event =>{
 //Открыть модальное окно карточки товара и сформировать информацию
 catalog.addEventListener('click', event => {
     const target = event.target;
+    const card = target.closest('.card');
 
-    const modalHeaderItem = document.querySelector('.modal__header-item'),
-        modalStatusItem = document.querySelector('.modal__status-item'),
-        modalDescriptionItem = document.querySelector('.modal__description-item'),
-        modalCostItem = document.querySelector('.modal__cost-item'),
-        modalImageItem = document.querySelector('.modal__image-item');
+    if (card) {
+        
+        const item = dataBase.find(obj => obj.id === +card.dataset.id);
 
-    let numId = target.parentElement.dataset.id;
-    if (!numId) { numId = target.parentElement.dataset.id; }
-
-    if (target.closest('.card')) {
+        modalHeaderItem.textContent = item.nameItem;
+        modalStatusItem.textContent = item.status === 'new' ? 'Новый' : 'Б/у';
+        modalDescriptionItem. textContent= item.descriptionItem;
+        modalCostItem.textContent = `${item.costItem} грн`;
+        modalImageItem.src = `data:image/jpeg;base64,${item.image}`;
         modalItem.classList.remove('hide');
-        modalHeaderItem.textContent = dataBase[numId].nameItem;
-        modalImageItem.src = 'data:image/jpeg;base64,' + dataBase[numId].image;
-        if (dataBase[numId].status === 'old') {
-            modalStatusItem.textContent = 'б/у';
-        } else {
-            modalStatusItem.textContent = 'отличное';
-        }
-        modalDescriptionItem.textContent = dataBase[numId].descriptionItem;
-        modalCostItem.textContent = dataBase[numId].costItem + ' ₽';
-
         document.addEventListener('keydown', closeModal);
     }
 });
@@ -134,6 +134,7 @@ modalSubmit.addEventListener('submit', event =>{
     for (const elem of elementsModalSubmit){
         itemObject[elem.name] = elem.value;
     }
+    itemObject.id = counter++;
     itemObject.image = infoPhoto.base64;
     dataBase.push(itemObject);
     closeModal({target: modalAdd});
@@ -148,13 +149,32 @@ addAd.addEventListener('click', ( ) => {
     document.body.addEventListener('keydown', closeModal);
 });
 
+//поиск объявления
+searchInput.addEventListener('input', () =>{
+    const valueSearch = searchInput.value.trim().toLowerCase();
 
+    if(valueSearch.length > 2){
+        const result = dataBase.filter(item =>item.nameItem.toLowerCase().includes(valueSearch)||
+                                       item.descriptionItem.toLowerCase().includes(valueSearch));
+        renderCard(result);
+    }
+});
+
+//фильтрация объявлений по категориям
+menuContainer.addEventListener('click', event =>{
+    const target = event.target;
+
+    if (target.tagName === 'A'){
+        const result = dataBase.filter(item => item.category === target.dataset.category);
+        renderCard(result);
+    }
+});
 
 //закрыть модальные окна
 modalAdd.addEventListener('click',closeModal);
 modalItem.addEventListener('click',closeModal);
 
-
+//вызвать рендер карточек
 renderCard();
 
 
