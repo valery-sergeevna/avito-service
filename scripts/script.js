@@ -14,6 +14,7 @@ const modalAdd = document.querySelector('.modal__add'),
     modalFileBtn = document.querySelector('.modal__file-btn'),
     modalImageAdd = document.querySelector('.modal__image-add'),
     searchInput = document.querySelector('.search__input'),
+    searchIcon = document.querySelector('.search__icon'),
     menuContainer = document.querySelector('.menu__container');
 
 //элементы модального окна
@@ -68,7 +69,7 @@ const renderCard = (DB = dataBase) => {
 
     DB.forEach(item => {
 
-        catalog.insertAdjacentHTML('beforeend', `
+        catalog.insertAdjacentHTML('afterbegin', `
         <li class="card" data-id="${item.id}">
             <img class="card__image" src = "data:image/jpeg;base64,${item.image}" alt="test">
             <div class="card__description">
@@ -147,6 +148,11 @@ addAd.addEventListener('click', ( ) => {
     modalAdd.classList.remove('hide');  
     modalBtnSubmit.disabled = true; 
     document.body.addEventListener('keydown', closeModal);
+});
+
+//показать поле поиска по клику на иконку
+searchIcon.addEventListener('click', () => {
+    searchInput.classList.toggle('search__opacity');
 });
 
 //поиск объявления
